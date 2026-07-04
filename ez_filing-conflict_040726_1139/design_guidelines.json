@@ -1,0 +1,70 @@
+{
+  "theme": "Light",
+  "archetype": "4 (Swiss & High-Contrast)",
+  "emotional_tone": "Trust, Precision, Authority, Clarity",
+  "fonts": {
+    "heading": "Outfit, sans-serif",
+    "body": "IBM Plex Sans, sans-serif",
+    "notes": "Outfit for strong, clean headers; IBM Plex Sans for dense data and tabular readability. No Inter."
+  },
+  "colors": {
+    "background": {
+      "app": "bg-slate-50",
+      "surface": "bg-white"
+    },
+    "text": {
+      "primary": "text-slate-900",
+      "secondary": "text-slate-500",
+      "muted": "text-slate-400"
+    },
+    "border": "border-slate-200",
+    "primary": {
+      "DEFAULT": "bg-blue-600",
+      "hover": "hover:bg-blue-700",
+      "text": "text-white"
+    },
+    "accents": {
+      "success": "bg-emerald-50 text-emerald-700 border-emerald-200",
+      "warning": "bg-amber-50 text-amber-700 border-amber-200",
+      "error": "bg-red-50 text-red-700 border-red-200",
+      "info": "bg-blue-50 text-blue-700 border-blue-200"
+    }
+  },
+  "spacing_and_layout": {
+    "app_structure": "Sidebar navigation (w-64, fixed) + Top Header (h-16, sticky) + Main Content Area",
+    "container_padding": "p-6 md:p-8",
+    "grid_strategy": "Control Room Grid. Dashboard top-level metrics in grid-cols-1 md:grid-cols-4 gap-6.",
+    "card_style": "Flat solid surfaces. rounded-xl, border border-slate-200, bg-white, shadow-sm."
+  },
+  "components": {
+    "buttons": "rounded-lg font-medium px-4 py-2 transition-colors duration-200. Primary: bg-blue-600 text-white hover:bg-blue-700. Secondary: bg-white border border-slate-200 text-slate-700 hover:bg-slate-50.",
+    "inputs": "rounded-lg border-slate-200 focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600",
+    "tables": "Dense layout. border-collapse. th: text-xs font-semibold tracking-wider uppercase text-slate-500 bg-slate-50. td: text-sm text-slate-700 border-b border-slate-100.",
+    "badges": "rounded-full px-2.5 py-0.5 text-xs font-medium border"
+  },
+  "motion": {
+    "hover": "transition-all duration-200 ease-out",
+    "page_transition": "animate-in fade-in slide-in-from-bottom-2 duration-300"
+  },
+  "media": {
+    "image_urls": [
+      {
+        "url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzZ8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMGF2YXRhcnxlbnwwfHx8fDE3ODMwNjk2ODJ8MA&ixlib=rb-4.1.0&q=85",
+        "category": "user_avatar",
+        "description": "Professional headshot for the logged-in user avatar in the header"
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Build a sidebar layout with links for Dashboard, Upload, Exceptions, IMS Actions, Compliance Preview, and Interest Estimator.",
+    "Use Phosphor Icons or Lucide React for UI iconography. Lucide is default and perfectly fine.",
+    "Dashboard must include 3-4 top cards (e.g., ITC claimed, Outward supplies, Deadlines) followed by recent uploads or exception summaries.",
+    "Dropzone should have a dashed border, light background tint, and an active state on drag over.",
+    "Exception Ledger should be a dense data table allowing inline edits (mocked if necessary) with clear red/green status badges.",
+    "IMS Action Tracker should feature Accept/Reject/Pending buttons per row, with ITC impact preview (delta).",
+    "Compliance Preview must show a split view (GSTR-1 and GSTR-3B) with drill-down mock interactions.",
+    "Interest Estimator needs an input form (Due Date, Actual Date, ECL Balance) computing the interest.",
+    "Include 'data-testid' on all interactive elements like buttons, inputs, tabs, and table rows.",
+    "Do NOT use 'Inter' font. Import and use 'Outfit' for headings and 'IBM Plex Sans' for body."
+  ]
+}

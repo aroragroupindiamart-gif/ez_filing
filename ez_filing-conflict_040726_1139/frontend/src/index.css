@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+    --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-body);
+    background-color: #f8fafc; /* slate-50 */
+    color: #0f172a; /* slate-900 */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "ss01", "cv11";
+}
+
+h1, h2, h3, h4, h5 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+}
+
+.font-display { font-family: var(--font-display); }
+.font-mono-numbers { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.tabular { font-variant-numeric: tabular-nums; }
+
+code {
+    font-family: var(--font-mono);
+}
+
+@layer base {
+    :root {
+        --background: 210 40% 98%;
+        --foreground: 222 47% 11%;
+        --card: 0 0% 100%;
+        --card-foreground: 222 47% 11%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 222 47% 11%;
+        --primary: 221 83% 53%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 210 40% 96%;
+        --secondary-foreground: 222 47% 11%;
+        --muted: 210 40% 96%;
+        --muted-foreground: 215 16% 47%;
+        --accent: 210 40% 96%;
+        --accent-foreground: 222 47% 11%;
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 214 32% 91%;
+        --input: 214 32% 91%;
+        --ring: 221 83% 53%;
+        --chart-1: 221 83% 53%;
+        --chart-2: 152 60% 44%;
+        --chart-3: 43 96% 56%;
+        --chart-4: 0 84% 60%;
+        --chart-5: 262 83% 58%;
+        --radius: 0.6rem;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-slate-50 text-slate-900;
+    }
+    /* left-aligned, spacious rhythm */
+    ::selection {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+}
+
+/* Ledger-grade table hover */
+.table-row-hover:hover {
+    background-color: #f8fafc;
+}
+
+/* Subtle focus ring for interactive rows */
+.focus-ring:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+/* Dashed dropzone */
+.dropzone-active {
+    background-image: linear-gradient(
+        45deg,
+        rgba(37, 99, 235, 0.04) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(37, 99, 235, 0.04) 50%,
+        rgba(37, 99, 235, 0.04) 75%,
+        transparent 75%,
+        transparent
+    );
+    background-size: 32px 32px;
+    animation: dz-shift 1.4s linear infinite;
+}
+@keyframes dz-shift {
+    from { background-position: 0 0; }
+    to { background-position: 32px 32px; }
+}
+
+/* Compliance grid separators */
+.split-cell + .split-cell {
+    border-left: 1px solid #e2e8f0;
+}
