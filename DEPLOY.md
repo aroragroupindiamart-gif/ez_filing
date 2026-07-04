@@ -1,82 +1,140 @@
-# Deployment Guide
+# GST-ECOM-EZ — Cloudflare Free Deployment Guide
 
-## Architecture
+## Architecture (100% Cloudflare free tier)
 
 ```
-Browser → Cloudflare Pages (frontend) → Backend API (Render free tier)
-                                      → PostgreSQL (Neon free tier)
+Browser → Cloudflare Pages (React frontend)
+              └── /api/* → Pages Functions (TypeScript/Hono backend)
+                               ├── Cloudflare D1 (SQLite database)
+                               └── Cloudflare R2 (encrypted file storage)
 ```
 
----
-
-## 1 — PostgreSQL database (Neon — free)
-
-1. Sign up at https://neon.tech (free tier, no credit card)
-2. Create a project → copy the **Connection string** (starts with `postgresql://`)
-3. Keep it handy — you'll need it as `DATABASE_URL`
+Everything runs on Cloudflare's free plan:
+- **Pages** — unlimited static hosting
+- **D1** — 5 GB database, 5M reads/day
+- **R2** — 10 GB storage, free egress
+- **Workers (via Pages Functions)** — 100k requests/day
 
 ---
 
-## 2 — Backend (Render.com — free tier)
+## Step 1 — Create a Cloudflare account
 
-1. Sign up at https://render.com and connect your GitHub account
-2. **New → Web Service** → select repo `aroragroupindiamart-gif/ez_filing`
-3. Settings:
-   - **Root Directory**: *(leave blank)*
-   - **Build Command**: `pip install -r ez_filing-conflict_040726_1139/backend/requirements.txt`
-   - **Start Command**: `cd ez_filing-conflict_040726_1139/backend && uvicorn server:app --host 0.0.0.0 --port $PORT`
-   - **Instance type**: Free
-4. **Environment Variables** (add these in the Render dashboard):
-
-   | Key | Value |
-   |-----|-------|
-   | `DATABASE_URL` | your Neon connection string |
-   | `ENCRYPTION_KEY` | 64-char hex string (generate: `python3 -c "import secrets; print(secrets.token_hex(32))"`) |
-   | `CORS_ORIGINS` | `https://your-app.pages.dev` (your Cloudflare Pages URL) |
-
-5. Deploy → copy the service URL (e.g. `https://gst-ecom-ez-backend.onrender.com`)
-
-> **Note**: Render free tier sleeps after 15 min of inactivity. First request after sleep takes ~30s.
-> Upgrade to Starter ($7/mo) for always-on.
+1. Sign up at https://dash.cloudflare.com (free)
+2. Go to **Workers & Pages**
 
 ---
 
-## 3 — Frontend (Cloudflare Pages — free)
+## Step 2 — Create the D1 database
 
-1. Go to https://dash.cloudflare.com → **Pages → Create a project → Connect to Git**
-2. Select repo `aroragroupindiamart-gif/ez_filing`
+1. Sidebar → **Storage & Databases → D1**
+2. Click **Create database**
+3. Name: `gst-ecom-ez-db`
+4. After creation, copy the **Database ID** (looks like `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
+5. Open `artifacts/gst-ecom-ez/wrangler.toml` and replace `FILL_IN_AFTER_CF_DASHBOARD_CREATION` with your Database ID
+
+---
+
+## Step 3 — Run the database schema
+
+In **Cloudflare Dashboard → D1 → gst-ecom-ez-db → Console**, paste and run the entire contents of `artifacts/gst-ecom-ez/schema.sql`.
+
+---
+
+## Step 4 — Create the R2 bucket
+
+1. Sidebar → **Storage & Databases → R2**
+2. Click **Create bucket**
+3. Name: `gst-ecom-ez-storage`
+4. Leave all defaults → Create
+
+---
+
+## Step 5 — Generate your ENCRYPTION_KEY
+
+Run this in any terminal (or use an online tool):
+```
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
+Save the 64-character hex string — **you must never lose it** (it encrypts all uploaded files).
+
+---
+
+## Step 6 — Deploy to Cloudflare Pages
+
+1. **Workers & Pages → Create → Pages → Connect to Git**
+2. Select repo: `aroragroupindiamart-gif/ez_filing`
 3. Build settings:
 
    | Setting | Value |
    |---------|-------|
-   | **Framework preset** | None (Custom) |
    | **Build command** | `npm install -g pnpm && pnpm install && pnpm --filter @workspace/gst-ecom-ez run build` |
    | **Build output directory** | `artifacts/gst-ecom-ez/dist/public` |
    | **Root directory** | *(leave blank)* |
-   | **Node version** | `20` |
 
-4. **Environment variables** (add in Cloudflare Pages settings):
+4. **Environment variables** — add these in the Pages settings (Settings → Environment Variables):
 
    | Key | Value |
    |-----|-------|
-   | `VITE_API_URL` | `https://gst-ecom-ez-backend.onrender.com/api` |
+   | `ENCRYPTION_KEY` | your 64-char hex key from Step 5 |
 
-5. Deploy → your app is live at `https://your-app.pages.dev`
-
----
-
-## 4 — Custom domain (optional, Cloudflare free)
-
-In Cloudflare Pages → Custom domains → add your domain.
-Cloudflare handles SSL automatically.
+5. Click **Save and Deploy** — your app goes live at `https://your-app.pages.dev`
 
 ---
 
-## Environment variable checklist
+## Step 7 — Bind D1 and R2 to your Pages project
 
-| Variable | Where | Description |
-|----------|--------|-------------|
-| `DATABASE_URL` | Render backend | PostgreSQL connection string from Neon |
-| `ENCRYPTION_KEY` | Render backend | 64-char hex — must match the one used when data was first written |
-| `CORS_ORIGINS` | Render backend | Comma-separated list of allowed frontend origins |
-| `VITE_API_URL` | Cloudflare Pages | Full URL to the backend `/api` path |
+After the first deploy:
+
+1. Go to your Pages project → **Settings → Functions**
+2. **D1 database bindings** → Add:
+   - Variable name: `DB`
+   - Database: `gst-ecom-ez-db`
+3. **R2 bucket bindings** → Add:
+   - Variable name: `STORAGE`
+   - Bucket: `gst-ecom-ez-storage`
+4. Click **Save** → **Deployments → Retry deployment** to rebuild with the bindings
+
+---
+
+## Step 8 — Verify it works
+
+Visit `https://your-app.pages.dev` — you should see the GST-ECOM-EZ dashboard.
+
+To test the API:
+```
+curl https://your-app.pages.dev/api/health
+# → {"status":"ok","ts":"...","runtime":"cloudflare-pages"}
+```
+
+Seed demo data:
+```
+curl -X POST https://your-app.pages.dev/api/seed/demo
+```
+
+---
+
+## Updating the app
+
+Every `git push` to `main` automatically triggers a new deployment on Cloudflare Pages (zero config needed).
+
+---
+
+## Environment variable reference
+
+| Variable | Where | Required | Description |
+|----------|--------|----------|-------------|
+| `ENCRYPTION_KEY` | Pages env vars | ✅ | 64-char hex — encrypts all uploaded files |
+| `DB` | D1 binding | ✅ | Cloudflare D1 database |
+| `STORAGE` | R2 binding | ✅ | Cloudflare R2 bucket |
+
+---
+
+## Limits on the free tier
+
+| Feature | Free limit | Expected usage |
+|---------|-----------|----------------|
+| Requests/day | 100,000 | Very comfortable for 1-5 users |
+| D1 reads/day | 5,000,000 | No concern |
+| D1 storage | 5 GB | Years of data |
+| R2 storage | 10 GB | Thousands of invoice PDFs |
+| R2 egress | Free | — |

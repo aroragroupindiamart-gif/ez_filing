@@ -1,0 +1,16 @@
+name = "gst-ecom-ez"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "dist/public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "gst-ecom-ez-db"
+database_id = "FILL_IN_AFTER_CF_DASHBOARD_CREATION"
+
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "gst-ecom-ez-storage"
+
+[vars]
+ENCRYPTION_KEY = ""
