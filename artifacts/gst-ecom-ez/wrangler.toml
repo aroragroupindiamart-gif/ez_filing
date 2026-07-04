@@ -6,7 +6,7 @@ pages_build_output_dir = "dist/public"
 [[d1_databases]]
 binding = "DB"
 database_name = "gst-ecom-ez-db"
-database_id = "FILL_IN_AFTER_CF_DASHBOARD_CREATION"
+database_id = "2734a637-4769-45c9-b5ae-e4c51c94fd37"
 
 [[r2_buckets]]
 binding = "STORAGE"
