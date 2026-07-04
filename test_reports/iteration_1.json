@@ -1,0 +1,50 @@
+{
+  "summary": "Backend: 11/12 pytest passed. Frontend: All pages load; Dashboard, Compliance drilldowns, IMS decisions, Interest, Export all functional after state loads. Encryption verified (stored bytes differ from plaintext). One spec violation in Table 4D and two frontend robustness bugs found.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/compliance/preview", "issue": "gstr3b['4']['4D'] is missing the required 'source_ids' field. Spec says each 4A/4B(1)/4B(2)/4D cell must contain igst/cgst/sgst/cess/source_ids/label. Only 4D omits source_ids (compliance.py build_gstr3b_table4). Even if 4D is derived, include an empty list for schema consistency.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/uploads (marketplace_csv)", "issue": "COLUMN_ALIASES in services/ingestion.py does NOT include snake_case header variants (e.g., 'invoice_number', 'invoice_date', 'buyer_gstin' with underscores). Rows with such headers fail with 'Missing invoice number or taxable value' even though raw storage shows the values. Add snake_case forms to each alias list."},
+      {"endpoint": "Sample marketplace CSV upload flow", "issue": "Clicking Upload page 'load a sample marketplace CSV' button consistently results in job status='exception' with 'Done — 0 invoices, 2 exceptions'. Review requested progressing/complete status. Root cause likely inside parse_marketplace_file (see /app/backend/services/ingestion.py) — 3-row sample yields 0 invoices, indicating either LineItem construction failure or invoice_type/taxable_value edge case with 'Buyer State' names."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "ExportPage", "issue": "Runtime crash 'Objects are not valid as a React child (found: object with keys {type, loc, msg, input, url})' when export button is clicked before AppState finishes loading (sellerGstin=null). Backend returns 422 with detail as array of pydantic error objects; toast.error(e.response.data.detail) passes that array to sonner which renders it as React child and errors overlay is shown. Fix: (a) disable export buttons while state.loading is true, and (b) always coerce API error to string, e.g., typeof detail==='string' ? detail : JSON.stringify(detail).", "selector": "[data-testid='export-gstr1-btn']", "priority": "HIGH"},
+      {"component": "AppShell header seller <select>", "issue": "React hydration warning: '<span> cannot be a child of <option>'. Emergent dynamic wrapper injects a <span> inside <option> which is invalid HTML. Consider using plain text expression without dynamic wrapping for the option label (AppShell.jsx line 78).", "selector": "[data-testid='header-select']", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Upload sample CSV → jobs table", "issue": "Job for sample CSV shows exception status instead of complete (see backend minor bug above). Testids and refresh flow work correctly.", "affected_selectors": ["[data-testid='load-sample-csv-btn']", "[data-testid='status-badge-*']"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Add 'source_ids' key (even if empty list) to Table 4D in services/compliance.build_gstr3b_table4 to satisfy the schema spec.",
+    "In services/ingestion.COLUMN_ALIASES add snake_case variants (invoice_number, invoice_date, buyer_gstin) so uploads with those exact headers parse successfully.",
+    "Debug why the frontend SAMPLE_CSV (Upload.jsx line 184) fails parsing — 3 rows produce 0 invoices; check LineItem construction/validation and inspect job exception messages.",
+    "Fix ExportPage crash: disable Generate buttons while useAppState.loading=true, and stringify pydantic 422 detail arrays before passing to toast.error (apply same defensive coercion in Compliance/IMS/Upload where 'e?.response?.data?.detail' is directly toasted).",
+    "Remove or bypass the dynamic <span> wrapper inside <option> in AppShell seller-select to eliminate the hydration warning."
+  ],
+  "critical_code_review_comments": [
+    "services/compliance.py build_gstr3b_table4 returns 4D without source_ids — inconsistent schema shape breaks strict consumers of the preview API.",
+    "Multiple frontend pages call toast.error(e?.response?.data?.detail || 'msg'). FastAPI validation errors return `detail` as an array of objects, not a string — causes sonner/React child crash. Wrap with a helper (e.g., extractErr(e)) that stringifies non-string details.",
+    "AppStateProvider does not gate route content on loading; pages render with sellerGstin=null on first paint, allowing API calls with empty query params that return 422.",
+    "Ingestion COLUMN_ALIASES only supports lowercase-with-spaces variants — real e-comm CSVs from Amazon MTR often use snake_case; missing coverage limits ingestion robustness.",
+    "Upload.jsx SAMPLE_CSV uses invoice dates that may be outside the selected period (uses today's date) — could confuse period-scoped listings if user is filing for a past period."
+  ],
+  "updated_files": [
+    "/app/backend/tests/backend_test.py (new)"
+  ],
+  "success_rate": {"backend": "92% (11/12)", "frontend": "80% (5/6 pages fully functional; ExportPage crashes on race condition)"},
+  "test_credentials": "N/A — single-tenant demo, no auth in v1.",
+  "seed_data_creation": "POST /api/seed/demo confirmed idempotent (2 runs → same counts 5/3/2). Seller 29ABCDE1234F1Z5 for current period auto-created.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend URL: REACT_APP_BACKEND_URL. Backend tests at /app/backend/tests/backend_test.py (pytest, uses current YYYY-MM as period). Known failing test: test_compliance_preview_structure asserts 4D.source_ids exists (spec requirement) — will pass once compliance.py fix lands. IMS accept on the amendment CN was already fired during this iteration, so 4B(2) reversal will already be non-zero; re-seed via POST /api/seed/demo before re-running IMS tests.",
+  "rca of the issue": "1) 4D missing source_ids — compliance.build_gstr3b_table4 constructs 4D from arithmetic totals and doesn't set source_ids key. 2) Export page crash — FastAPI returns 422 with detail=[{type,loc,msg,input,url}, ...] when sellerGstin query param is empty; frontend passes that array to toast.error → sonner renders as React child → 'Objects are not valid as React child' overlay. 3) Sample CSV exception — ingestion alias resolver + LineItem construction path yields no invoices for the frontend-generated sample; needs backend log inspection during upload."
+}
