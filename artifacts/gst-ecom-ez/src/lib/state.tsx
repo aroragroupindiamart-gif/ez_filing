@@ -41,13 +41,17 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     (async () => {
       try {
         let rows: Seller[] = await api.listSellers();
+        if (!Array.isArray(rows)) rows = [];
         if (!rows.length) {
           const seed: any = await api.seedDemo();
-          setPeriod(seed.period);
+          if (seed && typeof seed.period === "string") setPeriod(seed.period);
           rows = await api.listSellers();
+          if (!Array.isArray(rows)) rows = [];
         }
         setSellers(rows);
         if (rows.length) setSellerGstin(rows[0].gstin);
+      } catch {
+        // backend not available (e.g. static-only deploy)
       } finally {
         setLoading(false);
       }
