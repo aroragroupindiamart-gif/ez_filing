@@ -96,8 +96,22 @@ async def upload_file(
     seller_gstin: str = Form(...),
     marketplace: Optional[str] = Form(None),
 ):
-    if kind not in {"marketplace_csv", "marketplace_xlsx", "vendor_pdf"}:
-        raise HTTPException(400, f"Unknown kind {kind}")
+    _KIND_TO_JOB = {
+        "marketplace_csv": "marketplace_parse",
+        "marketplace_xlsx": "marketplace_parse",
+        "outward_pdf": "outward_ocr",
+        "inward_pdf": "inward_ocr",
+        "vendor_pdf": "inward_ocr",  # backward compat
+    }
+    _KIND_TO_DOCTYPE = {
+        "marketplace_csv": "marketplace",
+        "marketplace_xlsx": "marketplace",
+        "outward_pdf": "outward",
+        "inward_pdf": "inward",
+        "vendor_pdf": "inward",
+    }
+    if kind not in _KIND_TO_JOB:
+        raise HTTPException(400, f"Unknown kind {kind!r}. Use marketplace_csv, marketplace_xlsx, outward_pdf, or inward_pdf.")
     if not is_valid_gstin(seller_gstin):
         raise HTTPException(400, "Invalid seller_gstin")
 
@@ -107,10 +121,12 @@ async def upload_file(
     storage_ref = f"{uuid.uuid4().hex}_{file.filename}"
     await write_storage(storage_ref, content)
 
+    doc_type = _KIND_TO_DOCTYPE[kind]
     upload = UploadRecord(
         filename=file.filename,
         size_bytes=len(content),
         kind=kind,  # type: ignore[arg-type]
+        doc_type=doc_type,  # type: ignore[arg-type]
         marketplace=marketplace,  # type: ignore[arg-type]
         period=period,
         seller_gstin=seller_gstin,
@@ -119,7 +135,7 @@ async def upload_file(
     )
     await repo.create_upload(upload.model_dump())
 
-    job_kind = "vendor_ocr" if kind == "vendor_pdf" else "marketplace_parse"
+    job_kind = _KIND_TO_JOB[kind]
     job = ProcessingJob(upload_id=upload.id, kind=job_kind, status="queued", message="Queued for processing")
     await repo.create_job(job.model_dump())
 
@@ -177,8 +193,8 @@ async def patch_vendor_invoice(vid: str, patch: VendorPatch):
 
 # =========================== Exceptions ===========================
 @router.get("/exceptions")
-async def list_exceptions(seller_gstin: str, period: str):
-    return await repo.list_exceptions(seller_gstin, period)
+async def list_exceptions(seller_gstin: str, period: str, doc_type: Optional[str] = Query(None)):
+    return await repo.list_exceptions(seller_gstin, period, doc_type=doc_type or None)
 
 
 class ExceptionFix(BaseModel):

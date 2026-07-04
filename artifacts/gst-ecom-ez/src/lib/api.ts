@@ -32,8 +32,10 @@ export const api = {
   patchVendorInvoice: (id: string, patch: object) =>
     client.patch(`/invoices/vendor/${id}`, patch).then((r) => r.data),
 
-  listExceptions: (seller_gstin: string, period: string) =>
-    client.get("/exceptions", { params: { seller_gstin, period } }).then((r) => r.data),
+  listExceptions: (seller_gstin: string, period: string, doc_type?: string) =>
+    client
+      .get("/exceptions", { params: { seller_gstin, period, ...(doc_type ? { doc_type } : {}) } })
+      .then((r) => r.data),
   resolveException: (id: string, corrected: object) =>
     client.post(`/exceptions/${id}/resolve`, { corrected }).then((r) => r.data),
 

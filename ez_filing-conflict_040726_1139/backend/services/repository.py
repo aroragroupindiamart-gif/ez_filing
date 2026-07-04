@@ -111,8 +111,11 @@ async def update_ims_action(aid: str, patch: dict): await _update(ims_actions, a
 
 # ---- exceptions ----
 async def add_exception(doc: dict): await _insert(exceptions_log, doc)
-async def list_exceptions(seller_gstin: str, period: str):
-    return await _list(exceptions_log, {"seller_gstin": seller_gstin, "period": period, "resolved": False}, limit=5000)
+async def list_exceptions(seller_gstin: str, period: str, doc_type: str | None = None):
+    q: dict = {"seller_gstin": seller_gstin, "period": period, "resolved": False}
+    if doc_type:
+        q["doc_type"] = doc_type
+    return await _list(exceptions_log, q, limit=5000)
 
 
 async def resolve_exception(eid: str, corrected: dict):

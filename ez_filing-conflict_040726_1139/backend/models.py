@@ -60,10 +60,14 @@ class Seller(BaseDoc):
 
 
 # ---------- Upload / Job ----------
+DocType = Literal["marketplace", "outward", "inward"]
+
+
 class UploadRecord(BaseDoc):
     filename: str
     size_bytes: int
-    kind: Literal["marketplace_csv", "marketplace_xlsx", "vendor_pdf"]
+    kind: Literal["marketplace_csv", "marketplace_xlsx", "vendor_pdf", "outward_pdf", "inward_pdf"]
+    doc_type: DocType = "marketplace"
     marketplace: Optional[Marketplace] = None
     period: str  # YYYY-MM
     seller_gstin: Optional[str] = None
@@ -73,7 +77,7 @@ class UploadRecord(BaseDoc):
 
 class ProcessingJob(BaseDoc):
     upload_id: str
-    kind: Literal["marketplace_parse", "vendor_ocr"]
+    kind: Literal["marketplace_parse", "vendor_ocr", "outward_ocr", "inward_ocr"]
     status: JobStatus = "queued"
     progress: int = 0  # 0..100
     message: str = ""
